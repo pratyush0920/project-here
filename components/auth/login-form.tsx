@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Field, TextInput } from "@/components/ui/button";
@@ -10,7 +11,12 @@ import { safeNextPath } from "@/lib/env";
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = safeNextPath(params.get("next"));
+  const isSignUp = params.get("mode") === "signup";
+  const requestedNext = params.get("next");
+  const next = safeNextPath(
+    requestedNext,
+    isSignUp ? "/onboarding" : "/app/today",
+  );
   const invite = params.get("invite");
   const errorCode = params.get("error");
   const [email, setEmail] = useState("");
@@ -31,12 +37,22 @@ export function LoginForm() {
   const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(
     invite ? `/invite/${invite}` : next,
   )}`;
+  const alternateParams = new URLSearchParams();
+  if (!isSignUp) alternateParams.set("mode", "signup");
+  if (requestedNext) alternateParams.set("next", requestedNext);
+  if (invite) alternateParams.set("invite", invite);
+  const alternateQuery = alternateParams.toString();
+  const alternateHref = `/login${alternateQuery ? `?${alternateQuery}` : ""}`;
 
   return (
     <div className="mt-10">
-      <h1 className="text-2xl font-medium">Continue with email</h1>
+      <h1 className="text-2xl font-medium">
+        {isSignUp ? "Sign up with email" : "Continue with email"}
+      </h1>
       <p className="mt-2 text-sm text-muted">
-        We&apos;ll send a short code. No password, no public profile.
+        {isSignUp
+          ? "Create your private account with a short email code."
+          : "We'll send a short code. No password, no public profile."}
       </p>
       <form
         className="mt-8 space-y-4"
@@ -54,15 +70,23 @@ export function LoginForm() {
                 email: parsed.data,
                 options: {
                   emailRedirectTo: redirectTo,
-                  shouldCreateUser: true,
+                  shouldCreateUser: isSignUp,
                 },
               });
               if (error) {
-                setMessage("Couldn't send that just now. Try once more.");
+                setMessage(
+                  isSignUp
+                    ? "Couldn't start sign-up just now. Try once more."
+                    : "Couldn't send a sign-in code. If you're new, choose Sign up.",
+                );
                 return;
               }
               setSent(true);
-              setMessage("Check your email for a code, or tap the link.");
+              setMessage(
+                isSignUp
+                  ? "Check your email to finish signing up."
+                  : "Check your email for a code, or tap the link.",
+              );
               return;
             }
             const { error } = await supabase.auth.verifyOtp({
@@ -99,10 +123,30 @@ export function LoginForm() {
           </Field>
         ) : null}
         <Button type="submit" className="w-full" disabled={pending}>
-          {sent ? "Sign in" : "Email me a code"}
+          {sent
+            ? isSignUp
+              ? "Finish sign up"
+              : "Sign in"
+            : isSignUp
+              ? "Email me a sign-up code"
+              : "Email me a sign-in code"}
         </Button>
       </form>
       {message ? <p className="mt-4 text-sm text-muted">{message}</p> : null}
+      <p className="mt-8 text-center text-sm text-muted">
+        {isSignUp ? "Already have an account?" : "New to Here?"}{" "}
+        <Link
+          href={alternateHref}
+          className="font-medium text-foreground underline-offset-4 hover:underline"
+          onClick={() => {
+            setSent(false);
+            setCode("");
+            setMessage(null);
+          }}
+        >
+          {isSignUp ? "Sign in" : "Sign up"}
+        </Link>
+      </p>
     </div>
   );
 }
