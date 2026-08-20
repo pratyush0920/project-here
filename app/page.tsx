@@ -7,9 +7,14 @@ export default function LandingPage() {
     <div className="mx-auto flex min-h-dvh w-full max-w-[640px] flex-col px-5 pb-16 pt-[max(1.25rem,env(safe-area-inset-top))]">
       <header className="flex items-center justify-between py-2">
         <Wordmark href="/" />
-        <Link href="/login" className="text-sm text-muted">
-          Sign in
-        </Link>
+        <nav aria-label="Account" className="flex items-center gap-4 text-sm">
+          <Link href="/login?mode=signup" className="text-muted">
+            Sign up
+          </Link>
+          <Link href="/login" className="text-muted">
+            Sign in
+          </Link>
+        </nav>
       </header>
 
       <main className="mt-10">
@@ -22,7 +27,7 @@ export default function LandingPage() {
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/login?next=/onboarding"
+            href="/login?mode=signup&next=/onboarding"
             className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent-strong px-5 text-[15px] font-medium text-white"
           >
             Create your space
